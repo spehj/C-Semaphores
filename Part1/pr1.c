@@ -70,6 +70,8 @@ int main(int argc, char *argv[]){
     sem_ID2 = semget(IPC_PRIVATE, 2, 0666);
 
 	// Semctl are System V semaphore control operations
+	// Semnum is the n-th semafore from the semaphore set
+	// SETVAL: set the semaphore value
 	semctl(sem_ID1, SEM_1, SETVAL, 1); 
 	semctl(sem_ID1, SEM_2, SETVAL, 0);
     semctl(sem_ID2, SEM_3, SETVAL, 0);
@@ -102,7 +104,9 @@ int proces1(){
     pom = malloc(n_pod);
 
     fi = open(vhod, O_RDONLY);
-
+	//shmat() attaches the System V shared memory segment identified by shmid to the address space of the calling process.
+	// if smhaddr is NULL, system chooses a suitable (unused) address for the segment
+	// 0: Use the existing segment associated with the key.
 	if((shm_Write1 = shmat(shm_ID1, NULL, 0 )) == (void *) -1 ){
 		perror("shmat err");
 		exit(2);
