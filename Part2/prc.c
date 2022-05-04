@@ -11,9 +11,12 @@
 #define HEIGHT_C 480
 #define WIDTH_C 640
 #define DEPTH_C 3
-#define HEIGHT_E 1024
-#define WIDTH_E 1280
+#define HEIGHT_E 1080
+#define WIDTH_E 1920
 #define DEPTH_E 2 // screen depth
+// Classroom
+//#define HEIGHT_E 1024
+//#define WIDTH_E 1280
 
 struct tms cpu;
 clock_t rt_proc, rt_start, rt_end;
@@ -40,6 +43,8 @@ int main(int argc, char *argv[])
     ssize_t original_size = WIDTH_C * HEIGHT_C * DEPTH_C;
     ssize_t screen_size = WIDTH_E * HEIGHT_E * DEPTH_E;
     unsigned short *screen;
+    int max_cycles = 100;
+    int curr_cycle = 0;
 
     pom = malloc(vrstica);
     mid_pom = malloc(original_size);
@@ -154,17 +159,25 @@ int main(int argc, char *argv[])
                 {
                     lseek(fo, 0, SEEK_SET);
                     counter_p3 = 0;
-                    rt_end = times(&cpu);
-                    rt_proc = rt_end - rt_start;
-                    printf("Cas v tiktakih:\n");
-                    printf("Realni: %ld \nCPE_U : %ld \nCPE_S : %ld\n",
-                           rt_proc, cpu.tms_utime, cpu.tms_stime);
-                    cpu_usr = (float)cpu.tms_utime / (float)ticks;
-                    cpu_sys = (float)cpu.tms_stime / (float)ticks;
-                    proc_elapsed = (float)(rt_proc) / (float)ticks;
-                    printf("Casi v sekundah\n");
-                    printf("Realni: %6.3f \nCPE_U : %6.3f \nCPE_S : %6.3f\n",
-                           proc_elapsed, cpu_usr, cpu_sys);
+                    if (curr_cycle < max_cycles)
+                    {
+                        curr_cycle++;
+                    }
+                    else if (curr_cycle >= max_cycles)
+                    {
+                        curr_cycle = 0;
+                        rt_end = times(&cpu);
+                        rt_proc = rt_end - rt_start;
+                        printf("Cas v tiktakih:\n");
+                        printf("Realni: %ld \nCPE_U : %ld \nCPE_S : %ld\n",
+                               rt_proc, cpu.tms_utime, cpu.tms_stime);
+                        cpu_usr = (float)cpu.tms_utime / (float)ticks;
+                        cpu_sys = (float)cpu.tms_stime / (float)ticks;
+                        proc_elapsed = (float)(rt_proc) / (float)ticks;
+                        printf("Casi v sekundah\n");
+                        printf("Realni: %6.3f \nCPE_U : %6.3f \nCPE_S : %6.3f\n",
+                               proc_elapsed, cpu_usr, cpu_sys);
+                    }
                 }
 
                 if (p_pod_p3 == -1)

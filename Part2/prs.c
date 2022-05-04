@@ -51,6 +51,8 @@ clock_t rt_proc, rt_start, rt_end;
 float cpu_usr, cpu_sys, proc_elapsed;
 pid_t pid1, pid2;
 int ticks;
+int max_cycles = 100;
+int curr_cycle = 0;
 
 int main(int argc, char *argv[])
 {
@@ -260,16 +262,24 @@ int proces3()
 		}
 		write(fo, screen, screen_size);
 		lseek(fo, 0, SEEK_SET);
-		rt_end = times(&cpu);
-		rt_proc = rt_end - rt_start;
-		printf("Cas v tiktakih:\n");
-		printf("Realni: %ld \nCPE_U : %ld \nCPE_S : %ld\n",
-			   rt_proc, cpu.tms_utime, cpu.tms_stime);
-		cpu_usr = (float)cpu.tms_utime / (float)ticks;
-		cpu_sys = (float)cpu.tms_stime / (float)ticks;
-		proc_elapsed = (float)(rt_proc) / (float)ticks;
-		printf("Casi v sekundah\n");
-		printf("Realni: %6.3f \nCPE_U : %6.3f \nCPE_S : %6.3f\n",
-			   proc_elapsed, cpu_usr, cpu_sys);
+		if (curr_cycle < max_cycles)
+		{
+			curr_cycle++;
+		}
+		else if (curr_cycle >= max_cycles)
+		{
+			curr_cycle = 0;
+			rt_end = times(&cpu);
+			rt_proc = rt_end - rt_start;
+			printf("Cas v tiktakih:\n");
+			printf("Realni: %ld \nCPE_U : %ld \nCPE_S : %ld\n",
+				   rt_proc, cpu.tms_utime, cpu.tms_stime);
+			cpu_usr = (float)cpu.tms_utime / (float)ticks;
+			cpu_sys = (float)cpu.tms_stime / (float)ticks;
+			proc_elapsed = (float)(rt_proc) / (float)ticks;
+			printf("Casi v sekundah\n");
+			printf("Realni: %6.3f \nCPE_U : %6.3f \nCPE_S : %6.3f\n",
+				   proc_elapsed, cpu_usr, cpu_sys);
+		}
 	}
 }
