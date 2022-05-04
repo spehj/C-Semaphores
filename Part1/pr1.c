@@ -24,10 +24,10 @@
 #define NPOD2 HEIGHT_C * WIDTH_C * DEPTH_E
 
 
-#define SEM_1 0 // read
+#define SEM_1 0	// read
 #define SEM_2 1	// write
-#define SEM_3 0	// read
-#define SEM_4 1	// write
+#define SEM_3 0	
+#define SEM_4 1	
 
 char vhod[] = "/dev/video0";
 char izhod[] = "/dev/fb0";
@@ -41,6 +41,8 @@ int sem_ID1, sem_ID2;
 
 int inx, i, j;
 char *shm_Read1, *shm_Write1, *shm_Read2, *shm_Write2;
+
+// sembuf is field of structs (sem number, sem operation, sem flags)
 struct sembuf semafor1;
 struct sembuf semafor2;
 
@@ -55,7 +57,6 @@ int main(int argc, char *argv[]){
 	// shmget returns the identifier of the System V shared memory (associated with key argument)
 	// key parameter can be a key returned from ftok() function (if we would heave 3 programs not related)
 	// key parameter have a value IPC_PRIVATE to indicate that the shared memory cannot be accessed by other processes
-
 	// NPOD1 is a memory for image from the camera
 	// IPC_CREAT vreates a new segment
     if((shm_ID1 = shmget(IPC_PRIVATE, NPOD1, IPC_CREAT | 0666)) == -1)
@@ -71,7 +72,7 @@ int main(int argc, char *argv[]){
 
 	// Semctl are System V semaphore control operations
 	// Semnum is the n-th semafore from the semaphore set
-	// SETVAL: set the semaphore value
+	// SETVAL: set the semaphore value at the begining
 	semctl(sem_ID1, SEM_1, SETVAL, 1); 
 	semctl(sem_ID1, SEM_2, SETVAL, 0);
     semctl(sem_ID2, SEM_3, SETVAL, 0);
@@ -104,7 +105,7 @@ int proces1(){
     pom = malloc(n_pod);
 
     fi = open(vhod, O_RDONLY);
-	//shmat() attaches the System V shared memory segment identified by shmid to the address space of the calling process.
+	// shmat() attaches the System V shared memory segment identified by shmid to the address space of the calling process.
 	// if smhaddr is NULL, system chooses a suitable (unused) address for the segment
 	// 0: Use the existing segment associated with the key.
 	if((shm_Write1 = shmat(shm_ID1, NULL, 0 )) == (void *) -1 ){
@@ -115,6 +116,9 @@ int proces1(){
 	while (1){
 		read(fi, pom, n_pod);
 
+		// Set semaphore 1 a semaphore number for first semaphore in the sem group
+		
+		// sem wait - write lock
 		semafor1.sem_num = SEM_1;
 		semafor1.sem_op = -1;
 		semafor1.sem_flg = 0;
@@ -122,6 +126,7 @@ int proces1(){
 
         memcpy(shm_Write1, pom, n_pod);
 
+		// sem signal - unlock read
 		semafor1.sem_num = SEM_2;
 		semafor1.sem_op = 1;
 		semafor1.sem_flg = 0;
@@ -150,13 +155,14 @@ int proces2(){
 	}
 	
 	while(1){
+		// sem read lock
 		semafor1.sem_num = SEM_2;
 		semafor1.sem_op = -1;
 		semafor1.sem_flg = 0;
 		semop(sem_ID1, &semafor1, 1);	
-
 		memcpy(pom, shm_Read1, original_size);
 
+		// sem signal - unlock write
         semafor1.sem_num = SEM_1;
 		semafor1.sem_op = 1;
 		semafor1.sem_flg = 0;
@@ -173,13 +179,14 @@ int proces2(){
             j++;
 		}
 		
+		// sem write lock
         semafor2.sem_num = SEM_3;
 		semafor2.sem_op = -1;
 		semafor2.sem_flg = 0;
 		semop(sem_ID2, &semafor2, 1);
-
 		memcpy(shm_Write2, izhodna, resized_size);
 
+		// sem signal unlock read
 		semafor2.sem_num = SEM_4;
 		semafor2.sem_op = 1;
 		semafor2.sem_flg = 0;
@@ -208,13 +215,14 @@ int proces3(){
 	}
 
 	while(1){
+		// sem read lock
 		semafor2.sem_num = SEM_4;
 		semafor2.sem_op = -1;
 		semafor2.sem_flg = 0;
 		semop(sem_ID2, &semafor2, 1);
-		
 		memcpy(pom, shm_Read2, n_pod);
 
+		// sem signal unlock write
 		semafor2.sem_num = SEM_3;
 		semafor2.sem_op = 1;
 		semafor2.sem_flg = 0;
